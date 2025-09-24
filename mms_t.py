@@ -3,19 +3,19 @@ from transformers import VitsModel, AutoTokenizer
 import sounddevice as sd
 import numpy as np
 
-# --- Load once and keep warm ---
+# --- Load model once (warm start) ---
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
 model = VitsModel.from_pretrained("facebook/mms-tts-mal").to(device)
 tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-mal")
 
-# If GPU -> half precision for speed
+# Half precision on GPU for speed
 if device != "cpu":
     model = model.half()
 
 def tts_malayalam(text: str):
-    """Fast Malayalam TTS with minimal latency"""
+    """Generate Malayalam speech and play immediately"""
     # Tokenize
     inputs = tokenizer(text, return_tensors="pt").to(device)
 
@@ -26,7 +26,7 @@ def tts_malayalam(text: str):
     # Convert to numpy
     speech = output.squeeze().detach().cpu().numpy()
 
-    # Normalize for safe playback
+    # Normalize
     speech = speech / np.max(np.abs(speech))
 
     # Play async (non-blocking)
@@ -35,6 +35,11 @@ def tts_malayalam(text: str):
 
 
 if __name__ == "__main__":
-    text = "ഹലോ, നിങ്ങൾക്ക് സുഖം താനേ?"
-    tts_malayalam(text)
-    input("Press Enter to exit after playback...\n")
+    print("✅ Malayalam TTS ready. Type text (or 'quit' to exit).")
+    while True:
+        text = input("\nEnter Malayalam text: ")
+        if text.strip().lower() == "quit":
+            print("👋 Exiting...")
+            break
+        if text.strip():
+            tts_malayalam(text)
